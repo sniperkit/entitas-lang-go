@@ -143,25 +143,30 @@ import (
 )
 
 func main() {
-    // Open file.
+	// Open file.
 	file, err = os.Open(os.Args[1])
 	if err != nil {
 		panic(err)
 	}
+
     // Parse source.
-    project, err := elang.Parse(file)
+	project, err := elang.Parse(file)
 	if err != nil {
 		panic(err)
 	}
 
+    // Print target and namespace.
+    // target entitas_csharp
+    // namespace my.game
 	fmt.Println(project.TargetDecl.Target)
 	fmt.Println(project.NamespaceDecl.Namespace)
 
+    // Print context names and their parameters. e.g. Game(default, myParam, etc, key:value)
 	for _, context := range project.ContextDecl.Context {
 		fmt.Print("Context: " + context.ContextName)
 		fmt.Print("(")
 		for k, v := range context.ContextParameter {
-            if v != "" {
+			if v != "" {
 				fmt.Printf("[%s:%s]", k, v)
 			} else {
 				fmt.Printf("[%s]", k)
