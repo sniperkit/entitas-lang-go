@@ -161,12 +161,10 @@ func main() {
 		fmt.Print("Context: " + context.ContextName)
 		fmt.Print("(")
 		for k, v := range context.ContextParameter {
-			if k != "" {
-				if v != "" {
-					fmt.Printf("[%s:%s]", k, v)
-				} else {
-					fmt.Printf("[%s]", k)
-				}
+            if v != "" {
+				fmt.Printf("[%s:%s]", k, v)
+			} else {
+				fmt.Printf("[%s]", k)
 			}
 		}
 		fmt.Println(")")
