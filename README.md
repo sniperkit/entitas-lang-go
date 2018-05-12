@@ -143,42 +143,33 @@ import (
 )
 
 func main() {
-	// Open File
-	filename := os.Args[1] // First arg
-	file, err = os.Open(filename)
+    // Open file.
+	file, err = os.Open(os.Args[1])
+	if err != nil {
+		panic(err)
+	}
+    // Parse source.
+    project, err := elang.Parse(file)
 	if err != nil {
 		panic(err)
 	}
 
-	f, err := elang.Parse(file)
-	if err != nil {
-		panic(err)
-	}
+	fmt.Println(project.TargetDecl.Target)
+	fmt.Println(project.NamespaceDecl.Namespace)
 
-	if f.TargetDecl != nil {
-		fmt.Println(f.TargetDecl.Target)
-	}
-
-	if f.NamespaceDecl != nil {
-		fmt.Println(f.NamespaceDecl.Namespace)
-	}
-
-	if f.ContextDecl != nil {
-        // Print context name and context parameter key value pairs.
-		for _, c := range f.ContextDecl.Context {
-			fmt.Print("Context: " + c.ContextName)
-			fmt.Print("(")
-			for k, v := range c.ContextParameter {
-				if k != "" {
-					if v != "" {
-						fmt.Printf("[%s:%s]", k, v)
-					} else {
-						fmt.Printf("[%s]", k)
-					}
+	for _, context := range project.ContextDecl.Context {
+		fmt.Print("Context: " + context.ContextName)
+		fmt.Print("(")
+		for k, v := range context.ContextParameter {
+			if k != "" {
+				if v != "" {
+					fmt.Printf("[%s:%s]", k, v)
+				} else {
+					fmt.Printf("[%s]", k)
 				}
 			}
-			fmt.Println(")")
 		}
+		fmt.Println(")")
 	}
 }
 ```
