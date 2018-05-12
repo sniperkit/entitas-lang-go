@@ -131,7 +131,7 @@ sys DestroySystem
 ```
 
 Entitas-Lang-Go Example Usage
-```
+```go
 package main
 
 import (
