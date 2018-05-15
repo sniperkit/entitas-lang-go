@@ -96,8 +96,8 @@ func (s *Scanner) scanNewline() (tok Token, lit string) {
 	return NEWLINE, buf.String()
 }
 
-// scanIdent consumes the current rune and all contiguous ident runes.
-func (s *Scanner) scanString() (tok Token, lit string) {
+// scanWord consumes the current rune and all contiguous ident runes.
+func (s *Scanner) scanWord() (tok Token, lit string) {
 	// Create a buffer and read the current character into it.
 	var buf bytes.Buffer
 	buf.WriteRune(s.read())
@@ -144,7 +144,7 @@ func (s *Scanner) Scan() (tok Token, lit string) {
 		return s.scanNewline()
 	} else if isLetter(ch) {
 		s.unread()
-		return s.scanString()
+		return s.scanWord()
 	} else if isDigit(ch) {
 		s.unread()
 		return s.scanDigit()

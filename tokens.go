@@ -15,7 +15,7 @@ const (
 	RPAREN     // ')'
 	COMMA      // ','
 	QUOTE      // '"'
-	UNDERSCORE
+	UNDERSCORE // '_'
 
 	WORD
 	INTEGER
@@ -25,8 +25,6 @@ const (
 	KW_CONTEXT          // 'CONTEXT'
 	KW_ALIAS            // 'ALIAS'
 	KW_COMP             // 'COMP'
-	KW_PREFIX           // 'PREFIX'
-	KW_UNIQUE           // 'UNIQUE'
 	KW_IN               // 'IN'
 	KW_DEFAULT          // 'DEFAULT'
 	KW_SYS              // 'SYS'
@@ -65,8 +63,6 @@ var TokenToString = map[Token]string{
 	KW_CONTEXT:          "context",
 	KW_ALIAS:            "alias",
 	KW_COMP:             "comp",
-	KW_PREFIX:           "prefix",
-	KW_UNIQUE:           "unique",
 	KW_IN:               "in",
 	KW_DEFAULT:          "default",
 	KW_SYS:              "sys",
@@ -92,8 +88,6 @@ var KeywordToToken = map[string]Token{
 	"context":        KW_CONTEXT,
 	"alias":          KW_ALIAS,
 	"comp":           KW_COMP,
-	"prefix":         KW_PREFIX,
-	"unique":         KW_UNIQUE,
 	"in":             KW_IN,
 	"default":        KW_DEFAULT,
 	"sys":            KW_SYS,
@@ -118,8 +112,6 @@ var TokenToKeyword = map[Token]string{
 	KW_CONTEXT:          "context",
 	KW_ALIAS:            "alias",
 	KW_COMP:             "comp",
-	KW_PREFIX:           "prefix",
-	KW_UNIQUE:           "unique",
 	KW_IN:               "in",
 	KW_DEFAULT:          "default",
 	KW_SYS:              "sys",
