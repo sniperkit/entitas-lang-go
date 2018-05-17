@@ -91,14 +91,49 @@ func (p *Parser) parseString() (str string, err error) {
 	return s, nil
 }
 
-func (p *Parser) parseAlias() (*AliasDecl, error) {
-	return nil, nil
+func (p *Parser) parseAlias() (*Alias, error) {
+	a := NewAlias()
+	id, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	a.AliasName = id
+	tok, lit := p.scanIgnoreWhitespace()
+	if tok != COLON {
+		return nil, fmt.Errorf("Parse alias failed. Found %q, expected ':'", lit)
+	}
+	str, err := p.parseString()
+	a.AliasValue = str
+	if err != nil {
+		return nil, err
+	}
+	return a, nil
 }
 
-func (p *Parser) parseContext() (*ContextDecl, error) {
+func (p *Parser) parseAliasDecl() (*AliasDecl, error) {
+	ad := NewAliasDecl()
+	tok, lit := p.scanIgnoreWhitespace()
+	if tok != KW_ALIAS {
+		return nil, fmt.Errorf("Parse alias failed. Found %q, expected 'alias'", lit)
+	}
+	for {
+		a, err := p.parseAlias()
+		ad.AddAlias(a)
+		if err != nil {
+			return nil, err
+		}
+		tok, _ := p.scan()
+		if tok == NEWLINE || tok == EOF {
+			return ad, nil
+		}
+		p.unscan()
+	}
+}
+
+func (p *Parser) parseContextDecl() (*ContextDecl, error) {
 	tok, lit := p.scanIgnoreWhitespace()
 	if tok != KW_CONTEXT {
-		return nil, fmt.Errorf("Parse context failed. Found %q, expected context", lit)
+		return nil, fmt.Errorf("Parse context failed. Found %q, expected 'context'", lit)
 	}
 	cd := NewContextDecl()
 	for {
@@ -112,7 +147,7 @@ func (p *Parser) parseContext() (*ContextDecl, error) {
 			return nil, err
 		}
 		c := NewContext()
-		c.ContextName = *id
+		c.ContextName = id
 		cd.AddContext(c)
 		kv, err := p.parseParameter()
 		if err != nil {
@@ -140,16 +175,16 @@ func (p *Parser) parseKeyValue() (key string, value string, err error) {
 		if err != nil {
 			return "", "", err
 		}
-		return *k, *v, nil
+		return k, v, nil
 	}
 	p.unscan()
-	return *k, "", nil
+	return k, "", nil
 }
 
-func (p *Parser) parseNamespace() (*NamespaceDecl, error) {
+func (p *Parser) parseNamespaceDecl() (*NamespaceDecl, error) {
 	tok, lit := p.scanIgnoreWhitespace()
 	if tok != KW_NAMESPACE {
-		return nil, fmt.Errorf("Parse namespace failed. Found %q, expected namespace", lit)
+		return nil, fmt.Errorf("Parse namespace failed. Found %q, expected 'namespace'", lit)
 	}
 	ns := NewNamespaceDecl()
 	nsv := ""
@@ -158,23 +193,20 @@ func (p *Parser) parseNamespace() (*NamespaceDecl, error) {
 		if err != nil {
 			return nil, err
 		}
-		nsv += *id
+		nsv += id
 		tok, lit := p.scan()
 		if tok != PERIOD {
 			if tok != NEWLINE {
-				return nil, fmt.Errorf("Parse namespace failed. Found %q, exspected '.' or newline.", lit)
-			} else {
-				ns.Namespace = nsv
-				return ns, nil
+				return nil, fmt.Errorf("Parse namespace failed. Found %q, exspected '.' or newline", lit)
 			}
+			ns.Namespace = nsv
+			return ns, nil
 		}
 		nsv += "."
 	}
-	ns.Namespace = nsv
-	return ns, nil
 }
 
-func (p *Parser) parseIdentifier() (*string, error) {
+func (p *Parser) parseIdentifier() (string, error) {
 	s := ""
 	for {
 		tok, lit := p.scanIgnoreWhitespace()
@@ -191,7 +223,7 @@ func (p *Parser) parseIdentifier() (*string, error) {
 		s += lit
 	} else {
 		p.unscan()
-		return nil, fmt.Errorf("Parse identifier failed. Found %q, expected word", lit)
+		return "", fmt.Errorf("Parse identifier failed. Found %q, expected word", lit)
 	}
 	for {
 		tok, lit := p.scan()
@@ -205,20 +237,20 @@ func (p *Parser) parseIdentifier() (*string, error) {
 		p.unscan()
 		break
 	}
-	return &s, nil
+	return s, nil
 }
 
-func (p *Parser) parseTarget() (*TargetDecl, error) {
+func (p *Parser) parseTargetDecl() (*TargetDecl, error) {
 	t := NewTargetDecl()
 	tok, lit := p.scanIgnoreWhitespace()
 	if tok != KW_TARGET {
-		return nil, fmt.Errorf("Parse target failed. Found %q, expected target", lit)
+		return nil, fmt.Errorf("Parse target failed. Found %q, expected 'target'", lit)
 	}
 	id, err := p.parseIdentifier()
 	if err != nil {
 		return nil, err
 	}
-	t.Target = *id
+	t.Target = id
 	tok, lit = p.scan()
 	if tok != NEWLINE {
 		return nil, fmt.Errorf("Parse target failed. Found %q, expected newline", lit)
@@ -227,28 +259,53 @@ func (p *Parser) parseTarget() (*TargetDecl, error) {
 	return t, nil
 }
 
-// Parses one entire entitas-lang file.
+// Parse one entire entitas-lang file.
 func (p *Parser) Parse() (*Project, error) {
-	f := new(Project)
-	t, err := p.parseTarget()
+	f := NewProject()
+	t, err := p.parseTargetDecl()
 	if err != nil {
 		return nil, err
 	}
 	f.TargetDecl = t
-	ns, err := p.parseNamespace()
+	ns, err := p.parseNamespaceDecl()
 	if err != nil {
 		return nil, err
 	}
 	f.NamespaceDecl = ns
-	cd, err := p.parseContext()
+	cd, err := p.parseContextDecl()
 	if err != nil {
 		return nil, err
 	}
 	f.ContextDecl = cd
+
+	ad, err := p.parseAliasDecl()
+	f.AddAliasDecl(ad)
+	if err != nil {
+		return nil, err
+	}
+	ad, err = p.parseAliasDecl()
+	f.AddAliasDecl(ad)
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+		ad, err := p.parseAliasDecl()
+		f.AddAliasDecl(ad)
+		if err != nil {
+			return nil, err
+		}
+		tok, _ := p.scan()
+		p.unscan()
+		if tok != KW_ALIAS {
+			break
+		}
+	}
+
 	return f, nil
 }
 
-// Parses one entire entitas-lang file.
+// Parse one entire entitas-lang file.
 func Parse(reader io.Reader) (*Project, error) {
 	p := NewParser(reader)
 	return p.Parse()

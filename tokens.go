@@ -1,12 +1,14 @@
 package elang
 
-// Represents a lexical token
+// Token ...
 type Token int
 
-// Represent the kinds of tokens
 const (
+	// ILLEGAL Token ...
 	ILLEGAL Token = iota
+	// EOF Token ...
 	EOF
+	// WHITESPACE Token ' ' ...
 	WHITESPACE // ' '
 	NEWLINE    // '\n' '\r\n'
 	PERIOD     // '.'

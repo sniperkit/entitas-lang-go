@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestKeyValue(t *testing.T) {
+func TestParseKeyValue(t *testing.T) {
 	val := "MyKey:MyValue"
 	p := NewParser(strings.NewReader(val))
 	k, v, err := p.parseKeyValue()
@@ -21,7 +21,7 @@ func TestKeyValue(t *testing.T) {
 	}
 }
 
-func TestKeyWithUnderscoreValueWithoutUnderscore(t *testing.T) {
+func TestParseKeyWithUnderscoreValueWithoutUnderscore(t *testing.T) {
 	val := "My_Key:MyValue"
 	p := NewParser(strings.NewReader(val))
 	k, v, err := p.parseKeyValue()
@@ -36,7 +36,7 @@ func TestKeyWithUnderscoreValueWithoutUnderscore(t *testing.T) {
 	}
 }
 
-func TestKeyWithUnderscoreValueWithUnderscore(t *testing.T) {
+func TestParseKeyWithUnderscoreValueWithUnderscore(t *testing.T) {
 	val := "My_Key:My_Value"
 	p := NewParser(strings.NewReader(val))
 	k, v, err := p.parseKeyValue()
@@ -51,7 +51,7 @@ func TestKeyWithUnderscoreValueWithUnderscore(t *testing.T) {
 	}
 }
 
-func TestKeyWithoutValue(t *testing.T) {
+func TestParseKeyWithoutValue(t *testing.T) {
 	val := "MyKey"
 	p := NewParser(strings.NewReader(val))
 	k, v, err := p.parseKeyValue()
@@ -66,7 +66,7 @@ func TestKeyWithoutValue(t *testing.T) {
 	}
 }
 
-func TestKeyWithColonWithoutValue(t *testing.T) {
+func TestParseKeyWithColonWithoutValue(t *testing.T) {
 	val := "MyKey:"
 	p := NewParser(strings.NewReader(val))
 	k, v, err := p.parseKeyValue()
@@ -81,7 +81,7 @@ func TestKeyWithColonWithoutValue(t *testing.T) {
 	}
 }
 
-func TestKeyWithNumber(t *testing.T) {
+func TestParseKeyWithNumber(t *testing.T) {
 	val := "MyKey0:"
 	p := NewParser(strings.NewReader(val))
 	k, v, err := p.parseKeyValue()

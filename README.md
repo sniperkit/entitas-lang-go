@@ -3,6 +3,11 @@ Currently implemented:
 - Target
 - Namespace
 - Context
+- Alias
+
+TODO:
+- Component
+- System
 
 additional syntax added:
 - KeyValue for context, component etc. ```context Game(default, key:value), GameState, Input```
@@ -15,8 +20,9 @@ target entitas_csharp
 namespace my.game.test
 
 
-context Game(default, key:value), GameState, Input
+context Game(default), GameState, Input
 
+alias intList : "System.Collections.Generic.List<int>" stringList : "System.Collections.Generic.List<string>"
 alias blueprints : "Entitas.Unity.Blueprints.Blueprints"
 alias int : "int"
 alias string : "string"
@@ -143,25 +149,19 @@ import (
 )
 
 func main() {
-	// Open file.
-	file, err = os.Open(os.Args[1])
+	file, err := os.Open(os.Args[1])
 	if err != nil {
 		panic(err)
 	}
 
-    // Parse source.
 	project, err := elang.Parse(file)
 	if err != nil {
 		panic(err)
 	}
 
-    // Print target and namespace.
-    // target entitas_csharp
-    // namespace my.game
 	fmt.Println(project.TargetDecl.Target)
 	fmt.Println(project.NamespaceDecl.Namespace)
 
-    // Print context names and their parameters. e.g. Game(default, myParam, etc, key:value)
 	for _, context := range project.ContextDecl.Context {
 		fmt.Print("Context: " + context.ContextName)
 		fmt.Print("(")
@@ -173,6 +173,12 @@ func main() {
 			}
 		}
 		fmt.Println(")")
+	}
+
+	for _, aliasDecl := range project.AliasDecl {
+		for _, alias := range aliasDecl.Alias {
+			fmt.Printf("Alias: %s:\"%s\"\n", alias.AliasName, alias.AliasValue)
+		}
 	}
 }
 ```
