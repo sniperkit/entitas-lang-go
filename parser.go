@@ -3,7 +3,6 @@ package elang
 import (
 	"fmt"
 	"io"
-	"strings"
 )
 
 // Parser represents a parser.
@@ -51,26 +50,56 @@ func (p *Parser) scanIgnoreWhitespace() (tok Token, lit string) {
 	return
 }
 
+func (p *Parser) parseKeyValue() (key string, value string, err error) {
+	k, err := p.parseIdentifier()
+	if err != nil {
+		return "", "", err
+	}
+	tok, _ := p.scanIgnoreWhitespace()
+	if tok == COLON {
+		v, err := p.parseIdentifier()
+		if err != nil {
+			return "", "", err
+		}
+		return k, v, nil
+	}
+	p.unscan()
+	return k, "", nil
+}
+
+func (p *Parser) parseKeyValueList() (kv KeyValue, err error) {
+	kv = make(KeyValue, 0)
+	for {
+		k, v, err := p.parseKeyValue()
+		if err != nil {
+			return kv, err
+		}
+		kv[k] = v
+		tok, _ := p.scan()
+		if tok == COMMA {
+			continue
+		}
+		p.unscan()
+		return kv, nil
+	}
+}
+
 func (p *Parser) parseParameter() (kv KeyValue, err error) {
 	tok, _ := p.scanIgnoreWhitespace()
 	if tok != LPAREN {
 		p.unscan()
 		return nil, nil
 	}
-	kv = make(KeyValue, 0)
-	for {
-		k, v, err := p.parseKeyValue()
-		if err != nil {
-			return nil, err
-		}
-		kv[k] = v
-		tok, lit := p.scan()
-		if tok == RPAREN {
-			return kv, nil
-		} else if tok != COMMA {
-			return nil, fmt.Errorf("Parse parameter failed. Found %q, expected ','", lit)
-		}
+	kv, err = p.parseKeyValueList()
+	if err != nil {
+		return nil, err
 	}
+	tok, _ = p.scan()
+	if tok != RPAREN {
+		p.unscan()
+		return nil, nil
+	}
+	return kv, nil
 }
 
 func (p *Parser) parseString() (str string, err error) {
@@ -164,23 +193,6 @@ func (p *Parser) parseContextDecl() (*ContextDecl, error) {
 	return cd, nil
 }
 
-func (p *Parser) parseKeyValue() (key string, value string, err error) {
-	k, err := p.parseIdentifier()
-	if err != nil {
-		return "", "", err
-	}
-	tok, _ := p.scanIgnoreWhitespace()
-	if tok == COLON {
-		v, err := p.parseIdentifier()
-		if err != nil {
-			return "", "", err
-		}
-		return k, v, nil
-	}
-	p.unscan()
-	return k, "", nil
-}
-
 func (p *Parser) parseNamespaceDecl() (*NamespaceDecl, error) {
 	tok, lit := p.scanIgnoreWhitespace()
 	if tok != KW_NAMESPACE {
@@ -208,36 +220,24 @@ func (p *Parser) parseNamespaceDecl() (*NamespaceDecl, error) {
 
 func (p *Parser) parseIdentifier() (string, error) {
 	s := ""
-	for {
-		tok, lit := p.scanIgnoreWhitespace()
-		if tok != UNDERSCORE {
-			p.unscan()
-			break
-		}
-		s += lit
-	}
-	tok, lit := p.scan()
-	if isKeyword(tok) {
-		s += strings.ToLower(lit)
-	} else if tok == WORD {
+	tok, lit := p.scanIgnoreWhitespace()
+	if isKeyword(tok) || tok == WORD || tok == UNDERSCORE {
 		s += lit
 	} else {
-		p.unscan()
-		return "", fmt.Errorf("Parse identifier failed. Found %q, expected word", lit)
+		return "", fmt.Errorf("Parse identifier failed. Found %q, expected keyword, word or underscore", lit)
 	}
 	for {
 		tok, lit := p.scan()
-		if isKeyword(tok) {
-			s += strings.ToLower(lit)
-			continue
-		} else if tok == WORD || tok == UNDERSCORE {
+		if isKeyword(tok) || tok == WORD || tok == UNDERSCORE {
 			s += lit
 			continue
 		}
 		p.unscan()
-		break
+		if containsOnly(s, '_') {
+			return "", fmt.Errorf("Parse identifier failed. Identifier cannot consist only of %q", lit)
+		}
+		return s, nil
 	}
-	return s, nil
 }
 
 func (p *Parser) parseTargetDecl() (*TargetDecl, error) {

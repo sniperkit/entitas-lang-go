@@ -4,11 +4,8 @@ package elang
 type Token int
 
 const (
-	// ILLEGAL Token ...
 	ILLEGAL Token = iota
-	// EOF Token ...
 	EOF
-	// WHITESPACE Token ' ' ...
 	WHITESPACE // ' '
 	NEWLINE    // '\n' '\r\n'
 	PERIOD     // '.'
@@ -140,6 +137,16 @@ func (t Token) String() string {
 	}
 
 	return "unknown"
+}
+
+// Returns true if t is a keyword token.
+func containsOnly(s string, ch rune) bool {
+	for _, sch := range s {
+		if sch != ch {
+			return false
+		}
+	}
+	return true
 }
 
 // Returns true if t is a keyword token.

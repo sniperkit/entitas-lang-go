@@ -9,9 +9,9 @@ import (
 )
 
 var KeyValueTestData = []struct {
-	in    string
-	k_out string
-	v_out string
+	in   string
+	kout string
+	vout string
 }{
 	/* ACCEPTED USAGE. */
 
@@ -50,13 +50,13 @@ func TestParseKeyValue(t *testing.T) {
 				p := NewParser(strings.NewReader(d.in))
 				Convey("parsing key/value "+d.in, func() {
 					k, v, err := p.parseKeyValue()
-					Convey("should not return an error ", func() {
+					Convey("should not return an error", func() {
 						So(err, ShouldBeNil)
-						Convey("parsed key should equal "+d.k_out, func() {
-							So(k, ShouldEqual, d.k_out)
+						Convey("parsed key should equal "+d.kout, func() {
+							So(k, ShouldEqual, d.kout)
 						})
-						Convey("parsed value should equal "+d.v_out, func() {
-							So(v, ShouldEqual, d.v_out)
+						Convey("parsed value should equal "+d.vout, func() {
+							So(v, ShouldEqual, d.vout)
 						})
 					})
 				})
