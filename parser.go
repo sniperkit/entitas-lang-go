@@ -169,7 +169,7 @@ func (p *Parser) parseKeyValue() (key string, value string, err error) {
 	if err != nil {
 		return "", "", err
 	}
-	tok, _ := p.scan()
+	tok, _ := p.scanIgnoreWhitespace()
 	if tok == COLON {
 		v, err := p.parseIdentifier()
 		if err != nil {
