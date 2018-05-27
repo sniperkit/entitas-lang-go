@@ -43,6 +43,18 @@ var KeyValueTestData = []struct {
 	/* SET 24 */ {"My_Key", "My_Key", ""},
 }
 
+var KeyValueErrorTestData = []struct {
+	in string
+}{
+	/* UNACCEPTED USAGE. */
+
+	/* SET 01 */ {"_a:_"},
+	/* SET 02 */ {"_a:"},
+	/* SET 03 */ {"_:_"},
+	/* SET 04 */ {":"},
+	/* SET 05 */ {""},
+}
+
 func TestParseKeyValue(t *testing.T) {
 	for i, d := range KeyValueTestData {
 		Convey("using data set "+strconv.Itoa(i+1), t, func() {
@@ -57,6 +69,28 @@ func TestParseKeyValue(t *testing.T) {
 						})
 						Convey("parsed value should equal "+d.vout, func() {
 							So(v, ShouldEqual, d.vout)
+						})
+					})
+				})
+			})
+		})
+	}
+}
+
+func TestParseErrorKeyValue(t *testing.T) {
+	for i, d := range KeyValueErrorTestData {
+		Convey("using data set "+strconv.Itoa(i+1), t, func() {
+			Convey("when given a new parser", func() {
+				p := NewParser(strings.NewReader(d.in))
+				Convey("parsing key/value "+d.in, func() {
+					k, v, err := p.parseKeyValue()
+					Convey("should return an error", func() {
+						So(err, ShouldNotBeNil)
+						Convey("parsed key should equal be blank ", func() {
+							So(k, ShouldBeBlank)
+						})
+						Convey("parsed value should equal be blank", func() {
+							So(v, ShouldBeBlank)
 						})
 					})
 				})

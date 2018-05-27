@@ -3,11 +3,14 @@ package elang
 import (
 	"fmt"
 	"io"
+	"log"
+	"os"
 )
 
 // Parser represents a parser.
 type Parser struct {
 	s   *Scanner
+	l   *log.Logger
 	buf struct {
 		tok         Token  // last read token
 		lit         string // last read literal
@@ -17,7 +20,7 @@ type Parser struct {
 
 // NewParser returns a new instance of Parser.
 func NewParser(r io.Reader) *Parser {
-	return &Parser{s: NewScanner(r)}
+	return &Parser{s: NewScanner(r), l: log.New(os.Stdout, "Entitas-Lang: ", 444)}
 }
 
 // scan returns the next token from the underlying scanner.
@@ -50,6 +53,7 @@ func (p *Parser) scanIgnoreWhitespace() (tok Token, lit string) {
 	return
 }
 
+// parseKeyValue `Key:Value` ...
 func (p *Parser) parseKeyValue() (key string, value string, err error) {
 	k, err := p.parseIdentifier()
 	if err != nil {
@@ -67,12 +71,13 @@ func (p *Parser) parseKeyValue() (key string, value string, err error) {
 	return k, "", nil
 }
 
+// parseKeyValueList `Key_One:Value, Key_Two:Value, Key_Three:Value` ...
 func (p *Parser) parseKeyValueList() (kv KeyValue, err error) {
 	kv = make(KeyValue, 0)
 	for {
 		k, v, err := p.parseKeyValue()
 		if err != nil {
-			return kv, err
+			return nil, err
 		}
 		kv[k] = v
 		tok, _ := p.scan()
@@ -84,8 +89,9 @@ func (p *Parser) parseKeyValueList() (kv KeyValue, err error) {
 	}
 }
 
+// parseParameter `(Key_One:Value, Key_Two:Value, Key_Three:Value)` ...
 func (p *Parser) parseParameter() (kv KeyValue, err error) {
-	tok, _ := p.scanIgnoreWhitespace()
+	tok, lit := p.scanIgnoreWhitespace()
 	if tok != LPAREN {
 		p.unscan()
 		return nil, nil
@@ -94,18 +100,19 @@ func (p *Parser) parseParameter() (kv KeyValue, err error) {
 	if err != nil {
 		return nil, err
 	}
-	tok, _ = p.scan()
+	tok, lit = p.scan()
 	if tok != RPAREN {
 		p.unscan()
-		return nil, nil
+		return nil, fmt.Errorf("Parse parameter failed. Found '%s', expected ')'", lit)
 	}
 	return kv, nil
 }
 
+// parseString `"this is a string"` ...
 func (p *Parser) parseString() (str string, err error) {
 	tok, lit := p.scanIgnoreWhitespace()
 	if tok != QUOTE {
-		return "", fmt.Errorf("Parse string failed. Found %q, expected '\"'", lit)
+		return "", fmt.Errorf("Parse string failed. Found '%s', expected '\"'", lit)
 	}
 	s := ""
 	for {
@@ -120,6 +127,7 @@ func (p *Parser) parseString() (str string, err error) {
 	return s, nil
 }
 
+// parseAlias `my_int : "int"` ...
 func (p *Parser) parseAlias() (*Alias, error) {
 	a := NewAlias()
 	id, err := p.parseIdentifier()
@@ -129,7 +137,7 @@ func (p *Parser) parseAlias() (*Alias, error) {
 	a.AliasName = id
 	tok, lit := p.scanIgnoreWhitespace()
 	if tok != COLON {
-		return nil, fmt.Errorf("Parse alias failed. Found %q, expected ':'", lit)
+		return nil, fmt.Errorf("Parse alias failed. Found '%s', expected ':'", lit)
 	}
 	str, err := p.parseString()
 	a.AliasValue = str
@@ -139,11 +147,12 @@ func (p *Parser) parseAlias() (*Alias, error) {
 	return a, nil
 }
 
+// parseAlias `alias my_int : "int"` `alias my_int : "int" my_string : "string"` ...
 func (p *Parser) parseAliasDecl() (*AliasDecl, error) {
 	ad := NewAliasDecl()
 	tok, lit := p.scanIgnoreWhitespace()
 	if tok != KW_ALIAS {
-		return nil, fmt.Errorf("Parse alias failed. Found %q, expected 'alias'", lit)
+		return nil, fmt.Errorf("Parse alias failed. Found '%s', expected 'alias'", lit)
 	}
 	for {
 		a, err := p.parseAlias()
@@ -159,35 +168,43 @@ func (p *Parser) parseAliasDecl() (*AliasDecl, error) {
 	}
 }
 
+// parseContext `my_game` `my_game (key_one:value)` `my_game (key_one:value, key_two:value)` ...
+func (p *Parser) parseContext() (*Context, error) {
+	c := NewContext()
+	id, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	c.ContextName = id
+	kv, err := p.parseParameter()
+	if err != nil {
+		return nil, err
+	}
+	c.ContextParameter = kv
+	if c.ContextParameter == nil {
+		c.ContextParameter = make(map[string]string, 0)
+	}
+	return c, nil
+}
+
+// parseContextDecl `context my_game` `context my_game (key:value), second_context(key:value)` ...
 func (p *Parser) parseContextDecl() (*ContextDecl, error) {
+	cd := NewContextDecl()
 	tok, lit := p.scanIgnoreWhitespace()
 	if tok != KW_CONTEXT {
-		return nil, fmt.Errorf("Parse context failed. Found %q, expected 'context'", lit)
+		return nil, fmt.Errorf("Parse context failed. Found '%s', expected 'context'", lit)
 	}
-	cd := NewContextDecl()
 	for {
-		tok, lit = p.scanIgnoreWhitespace()
-		if tok != WORD {
-			return nil, fmt.Errorf("Parse context failed. Found %q, expected identifier", lit)
-		}
-		p.unscan()
-		id, err := p.parseIdentifier()
+		c, err := p.parseContext()
 		if err != nil {
 			return nil, err
 		}
-		c := NewContext()
-		c.ContextName = id
 		cd.AddContext(c)
-		kv, err := p.parseParameter()
-		if err != nil {
-			return nil, err
-		}
-		c.ContextParameter = kv
 		tok, lit = p.scan()
 		if tok == NEWLINE || tok == EOF {
 			break
 		} else if tok != COMMA {
-			return nil, fmt.Errorf("Parse context failed. Found %q, expected ','", lit)
+			return nil, fmt.Errorf("Parse context failed. Found '%s', expected ','", lit)
 		}
 	}
 	return cd, nil
@@ -196,7 +213,7 @@ func (p *Parser) parseContextDecl() (*ContextDecl, error) {
 func (p *Parser) parseNamespaceDecl() (*NamespaceDecl, error) {
 	tok, lit := p.scanIgnoreWhitespace()
 	if tok != KW_NAMESPACE {
-		return nil, fmt.Errorf("Parse namespace failed. Found %q, expected 'namespace'", lit)
+		return nil, fmt.Errorf("Parse namespace failed. Found '%s', expected 'namespace'", lit)
 	}
 	ns := NewNamespaceDecl()
 	nsv := ""
@@ -209,7 +226,7 @@ func (p *Parser) parseNamespaceDecl() (*NamespaceDecl, error) {
 		tok, lit := p.scan()
 		if tok != PERIOD {
 			if tok != NEWLINE {
-				return nil, fmt.Errorf("Parse namespace failed. Found %q, exspected '.' or newline", lit)
+				return nil, fmt.Errorf("Parse namespace failed. Found '%s', exspected '.' or newline", lit)
 			}
 			ns.Namespace = nsv
 			return ns, nil
@@ -224,7 +241,7 @@ func (p *Parser) parseIdentifier() (string, error) {
 	if isKeyword(tok) || tok == WORD || tok == UNDERSCORE {
 		s += lit
 	} else {
-		return "", fmt.Errorf("Parse identifier failed. Found %q, expected keyword, word or underscore", lit)
+		return "", fmt.Errorf("Parse identifier failed. Found '%s', expected keyword, word or underscore", lit)
 	}
 	for {
 		tok, lit := p.scan()
@@ -234,7 +251,7 @@ func (p *Parser) parseIdentifier() (string, error) {
 		}
 		p.unscan()
 		if containsOnly(s, '_') {
-			return "", fmt.Errorf("Parse identifier failed. Identifier cannot consist only of %q", lit)
+			return "", fmt.Errorf("Parse identifier failed. Identifier cannot consist only of \"_\"")
 		}
 		return s, nil
 	}
@@ -244,7 +261,7 @@ func (p *Parser) parseTargetDecl() (*TargetDecl, error) {
 	t := NewTargetDecl()
 	tok, lit := p.scanIgnoreWhitespace()
 	if tok != KW_TARGET {
-		return nil, fmt.Errorf("Parse target failed. Found %q, expected 'target'", lit)
+		return nil, fmt.Errorf("Parse target failed. Found '%s', expected 'target'", lit)
 	}
 	id, err := p.parseIdentifier()
 	if err != nil {
@@ -253,7 +270,7 @@ func (p *Parser) parseTargetDecl() (*TargetDecl, error) {
 	t.Target = id
 	tok, lit = p.scan()
 	if tok != NEWLINE {
-		return nil, fmt.Errorf("Parse target failed. Found %q, expected newline", lit)
+		return nil, fmt.Errorf("Parse target failed. Found '%s', expected newline", lit)
 	}
 
 	return t, nil

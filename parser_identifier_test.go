@@ -9,47 +9,28 @@ import (
 )
 
 var IdentifierTestData = []struct {
-	in    string
-	out   string
-	error bool
+	in  string
+	out string
 }{
 	/* ACCEPTED USAGE. */
 
-	/* SET 01 */ {"test", "test", false},
-	/* SET 02 */ {"test_id", "test_id", false},
-	/* SET 03 */ {" test_id", "test_id", false},
-	/* SET 04 */ {"      test_id", "test_id", false},
-	/* SET 05 */ {"_test_id", "_test_id", false},
-	/* SET 06 */ {"_test___ id", "_test___", false},
-	/* SET 07 */ {"_t", "_t", false},
+	/* SET 01 */ {"test", "test"},
+	/* SET 02 */ {"test_id", "test_id"},
+	/* SET 03 */ {" test_id", "test_id"},
+	/* SET 04 */ {"      test_id", "test_id"},
+	/* SET 05 */ {"_test_id", "_test_id"},
+	/* SET 06 */ {"_test___ id", "_test___"},
+	/* SET 07 */ {"_t", "_t"},
+}
 
+var IdentifierErrorTestData = []struct {
+	in  string
+	out string
+}{
 	/* UNACCEPTED USAGE. */
 
-	/* SET 08 */ {"_ t", "", true},
-	/* SET 09 */ {"_", "", true},
-}
-
-func SwapString(b bool, t, f string) string {
-	if b {
-		return t
-	}
-	return f
-}
-
-func SwapError(e bool, err error) {
-	if e {
-		So(err, ShouldNotBeNil)
-	} else {
-		So(err, ShouldBeNil)
-	}
-}
-
-func SwapBoolean(t bool, ok bool) {
-	if t {
-		So(ok, ShouldBeTrue)
-	} else {
-		So(ok, ShouldBeFalse)
-	}
+	/* SET 01 */ {"_ t", ""},
+	/* SET 02 */ {"_", ""},
 }
 
 func TestParseIdentifier(t *testing.T) {
@@ -59,10 +40,29 @@ func TestParseIdentifier(t *testing.T) {
 				p := NewParser(strings.NewReader(d.in))
 				Convey("parsing identifier "+d.in, func() {
 					id, err := p.parseIdentifier()
-					Convey(SwapString(d.error, "should return an error", "should not return an error"), func() {
-						SwapError(d.error, err)
+					Convey("should not return an error", func() {
+						So(err, ShouldBeNil)
 						Convey("parsed value should equal "+d.out, func() {
 							So(id, ShouldEqual, d.out)
+						})
+					})
+				})
+			})
+		})
+	}
+}
+
+func TestParseErrorIdentifier(t *testing.T) {
+	for i, d := range IdentifierErrorTestData {
+		Convey("using data set "+strconv.Itoa(i+1), t, func() {
+			Convey("when given a new parser", func() {
+				p := NewParser(strings.NewReader(d.in))
+				Convey("parsing identifier "+d.in, func() {
+					id, err := p.parseIdentifier()
+					Convey("should return an error", func() {
+						So(err, ShouldNotBeNil)
+						Convey("parsed value should be blank ", func() {
+							So(id, ShouldBeBlank)
 						})
 					})
 				})
