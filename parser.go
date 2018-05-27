@@ -109,24 +109,6 @@ func (p *Parser) parseKeyValueList() (kv KeyValue, err error) {
 	}
 }
 
-// parseIdentifierList `Key_One, Key_Two, Key_Three` ...
-func (p *Parser) parseIdentifierList() (l []string, err error) {
-	l = make([]string, 0)
-	for {
-		id, err := p.parseIdentifier()
-		if err != nil {
-			return nil, err
-		}
-		l = append(l, id)
-		tok, _ := p.scan()
-		if tok == COMMA {
-			continue
-		}
-		p.unscan()
-		return l, nil
-	}
-}
-
 // parseParameter `(Key_One:Value, Key_Two:Value, Key_Three:Value)` ...
 func (p *Parser) parseParameter() (kv KeyValue, err error) {
 	tok, lit := p.scanIgnoreWhitespace()
@@ -185,6 +167,24 @@ func (p *Parser) parseIdentifier() (string, error) {
 			return "", fmt.Errorf("Parse identifier failed. Identifier cannot consist only of \"_\"")
 		}
 		return s, nil
+	}
+}
+
+// parseIdentifierList `Key_One, Key_Two, Key_Three` ...
+func (p *Parser) parseIdentifierList() (l []string, err error) {
+	l = make([]string, 0)
+	for {
+		id, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		l = append(l, id)
+		tok, _ := p.scan()
+		if tok == COMMA {
+			continue
+		}
+		p.unscan()
+		return l, nil
 	}
 }
 
