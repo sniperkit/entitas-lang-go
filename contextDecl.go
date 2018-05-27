@@ -1,5 +1,7 @@
 package elang
 
+import "bytes"
+
 // ContextDecl ...
 type ContextDecl struct {
 	Context []*Context
@@ -18,7 +20,7 @@ func (c *ContextDecl) AddContext(Context *Context) {
 // GetContextWithName ...
 func (c *ContextDecl) GetContextWithName(Name string) *Context {
 	for _, context := range c.Context {
-		if context.ContextName == Name {
+		if context.Name == Name {
 			return context
 		}
 	}
@@ -43,4 +45,16 @@ func (c *ContextDecl) GetContextWithParameterValue(Parameter string, Value strin
 		}
 	}
 	return nil
+}
+
+// String ...
+func (c ContextDecl) String() string {
+	var buffer bytes.Buffer
+	for i, context := range c.Context {
+		buffer.WriteString(context.String())
+		if i != len(c.Context)-1 {
+			buffer.WriteString(", ")
+		}
+	}
+	return buffer.String()
 }

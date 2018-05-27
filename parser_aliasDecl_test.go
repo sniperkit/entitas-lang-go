@@ -47,7 +47,7 @@ func TestParseAliasDecl(t *testing.T) {
 									Convey("alias should not be nil ", func() {
 										So(alias, ShouldNotBeNil)
 										Convey("alias should contain value "+dv, func() {
-											So(alias.AliasValue, ShouldEqual, dv)
+											So(alias.Value, ShouldEqual, dv)
 										})
 									})
 								})

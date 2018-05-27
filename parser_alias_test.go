@@ -39,10 +39,10 @@ func TestParseAlias(t *testing.T) {
 						Convey("alias should not be nil", func() {
 							So(alias, ShouldNotBeNil)
 							Convey("parsed alias name should equal "+d.name, func() {
-								So(alias.AliasName, ShouldEqual, d.name)
+								So(alias.Name, ShouldEqual, d.name)
 							})
 							Convey("parsed alias value should equal "+d.value, func() {
-								So(alias.AliasValue, ShouldEqual, d.value)
+								So(alias.Value, ShouldEqual, d.value)
 							})
 						})
 					})

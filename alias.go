@@ -2,11 +2,16 @@ package elang
 
 // Alias ...
 type Alias struct {
-	AliasName  string
-	AliasValue string
+	Name  string
+	Value string
 }
 
 // NewAlias ...
 func NewAlias() *Alias {
-	return &Alias{"", ""}
+	return &Alias{}
+}
+
+// String ...
+func (a Alias) String() string {
+	return "[" + a.Name + ":" + a.Value + "]"
 }

@@ -1,5 +1,7 @@
 package elang
 
+import "bytes"
+
 // AliasDecl ...
 type AliasDecl struct {
 	Alias []*Alias
@@ -18,7 +20,7 @@ func (a *AliasDecl) AddAlias(Alias *Alias) {
 // GetAliasWithName ...
 func (a *AliasDecl) GetAliasWithName(Name string) *Alias {
 	for _, alias := range a.Alias {
-		if alias.AliasName == Name {
+		if alias.Name == Name {
 			return alias
 		}
 	}
@@ -28,7 +30,7 @@ func (a *AliasDecl) GetAliasWithName(Name string) *Alias {
 // GetAliasWithValue ...
 func (a *AliasDecl) GetAliasWithValue(Value string) *Alias {
 	for _, alias := range a.Alias {
-		if alias.AliasValue == Value {
+		if alias.Value == Value {
 			return alias
 		}
 	}
@@ -38,9 +40,21 @@ func (a *AliasDecl) GetAliasWithValue(Value string) *Alias {
 // GetAliasWithNameValue ...
 func (a *AliasDecl) GetAliasWithNameValue(Name string, Value string) *Alias {
 	for _, alias := range a.Alias {
-		if alias.AliasName == Name && alias.AliasValue == Value {
+		if alias.Name == Name && alias.Value == Value {
 			return alias
 		}
 	}
 	return nil
+}
+
+// String ...
+func (a *AliasDecl) String() string {
+	var buffer bytes.Buffer
+	for i, alias := range a.Alias {
+		buffer.WriteString(alias.String())
+		if i != len(a.Alias)-1 {
+			buffer.WriteString(", ")
+		}
+	}
+	return buffer.String()
 }

@@ -41,10 +41,10 @@ func TestParseContext(t *testing.T) {
 						Convey("context should not be nil", func() {
 							So(context, ShouldNotBeNil)
 							Convey("parsed context name should equal "+d.name, func() {
-								So(context.ContextName, ShouldEqual, d.name)
+								So(context.Name, ShouldEqual, d.name)
 							})
 							Convey("parsed context parameter should not be nil", func() {
-								So(context.ContextParameter, ShouldNotBeNil)
+								So(context.Parameter, ShouldNotBeNil)
 								for dk, dv := range d.param {
 									Convey("context contains parameter with key "+dk, func() {
 										value, ok := context.GetParameter(dk)

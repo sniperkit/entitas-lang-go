@@ -1,28 +1,42 @@
 package elang
 
+import (
+	"bytes"
+)
+
 // Context ...
 type Context struct {
-	ContextName      string
-	ContextParameter KeyValue
+	Name      string
+	Parameter KeyValue
 }
 
 // NewContext ...
 func NewContext() *Context {
-	return &Context{"", make(KeyValue, 0)}
+	return &Context{Parameter: NewKeyValue()}
 }
 
 // SetParameterValue ...
 func (c *Context) SetParameterValue(Key string, Value string) {
-	c.ContextParameter[Key] = Value
+	c.Parameter[Key] = Value
 }
 
 // SetParameter ...
 func (c *Context) SetParameter(Key string) {
-	c.ContextParameter[Key] = ""
+	c.Parameter[Key] = ""
 }
 
 // GetParameter ...
 func (c *Context) GetParameter(Key string) (value string, ok bool) {
-	value, ok = c.ContextParameter[Key]
+	value, ok = c.Parameter[Key]
 	return
+}
+
+// String ...
+func (c Context) String() string {
+	var buffer bytes.Buffer
+	buffer.WriteString(c.Name)
+	buffer.WriteRune('(')
+	buffer.WriteString(c.Parameter.String())
+	buffer.WriteRune(')')
+	return buffer.String()
 }

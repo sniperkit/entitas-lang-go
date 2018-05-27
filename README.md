@@ -6,7 +6,7 @@ Currently implemented:
 - Alias
 
 TODO:
-- Component
+- Component (in progress)
 - System
 
 additional syntax added:
@@ -154,7 +154,15 @@ func main() {
 		panic(err)
 	}
 
-	project, err := elang.Parse(file)
+    parser := elang.NewParser(file)
+	parser.HandleContextDecl(func(p *elang.Project, c *elang.ContextDecl) error {
+		if c.GetContextWithParameter("default") == nil {
+			return fmt.Errorf("default context not defined!")
+		}
+		return nil
+	})
+
+	project, err := parser.Parse()
 	if err != nil {
 		panic(err)
 	}
@@ -162,23 +170,24 @@ func main() {
 	fmt.Println(project.TargetDecl.Target)
 	fmt.Println(project.NamespaceDecl.Namespace)
 
-	for _, context := range project.ContextDecl.Context {
-		fmt.Print("Context: " + context.ContextName)
-		fmt.Print("(")
-		for k, v := range context.ContextParameter {
-			if v != "" {
-				fmt.Printf("[%s:%s]", k, v)
-			} else {
-				fmt.Printf("[%s]", k)
-			}
-		}
-		fmt.Println(")")
-	}
+	fmt.Printf("ContextDecl: %s\n\n", project.ContextDecl)
 
 	for _, aliasDecl := range project.AliasDecl {
-		for _, alias := range aliasDecl.Alias {
-			fmt.Printf("Alias: %s:\"%s\"\n", alias.AliasName, alias.AliasValue)
+		fmt.Printf("AliasDecl: %s\n", aliasDecl)
+	}
+	fmt.Println()
+
+	for _, componentDecl := range project.ComponentDecl {
+		fmt.Print("Component: " + componentDecl.Name)
+		fmt.Printf("(%s)", componentDecl.Parameter)
+
+		if len(componentDecl.Context) > 0 {
+			fmt.Print(" in ")
+			for _, c := range componentDecl.Context {
+				fmt.Printf("[%s]", c)
+			}
 		}
+		fmt.Println()
 	}
 }
 ```
