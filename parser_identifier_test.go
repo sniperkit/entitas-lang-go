@@ -23,7 +23,7 @@ var IdentifierTestData = []struct {
 	/* SET 07 */ {"_t", "_t"},
 }
 
-var IdentifierErrorTestData = []struct {
+var IdentifierTestErrorData = []struct {
 	in  string
 	out string
 }{
@@ -53,7 +53,7 @@ func TestParseIdentifier(t *testing.T) {
 }
 
 func TestParseErrorIdentifier(t *testing.T) {
-	for i, d := range IdentifierErrorTestData {
+	for i, d := range IdentifierTestErrorData {
 		Convey("using data set "+strconv.Itoa(i+1), t, func() {
 			Convey("when given a new parser", func() {
 				p := NewParser(strings.NewReader(d.in))

@@ -28,6 +28,10 @@ var ContextDeclTestErrorData = []struct {
 
 	/* SET 01 */ {"context my_game(), my_meta"},
 	/* SET 02 */ {"context my_game(a, ), my_meta"},
+	/* SET 03 */ {"CONTEXT my_game(), my_meta"},
+	/* SET 04 */ {"CONTEXT my_game(a, ), my_meta"},
+	/* SET 05 */ {"CONTEXT my_game, my_meta"},
+	/* SET 06 */ {"CONTEXT my_game(key:value), my_meta"},
 }
 
 func TestParseContextDecl(t *testing.T) {

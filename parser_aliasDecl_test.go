@@ -25,6 +25,9 @@ var AliasDeclTestErrorData = []struct {
 
 	/* SET 01 */ {"alias _ : \"value\""},
 	/* SET 02 */ {"alias _a \"value\""},
+	/* SET 03 */ {"ALIAS _ : \"value\""},
+	/* SET 04 */ {"ALIAS _a \"value\""},
+	/* SET 06 */ {"ALIAS id : \"value\""},
 }
 
 func TestParseAliasDecl(t *testing.T) {

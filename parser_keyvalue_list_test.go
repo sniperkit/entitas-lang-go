@@ -23,7 +23,7 @@ var KeyValueListTestData = []struct {
 	/* SET 07 */ {"Key_One:Blah,_KeyTwo:Blah", KeyValue{"Key_One": "Blah", "_KeyTwo": "Blah"}},
 }
 
-var KeyValueListErrorTestData = []struct {
+var KeyValueListTestErrorData = []struct {
 	in string
 }{
 	/* UNACCEPTED USAGE. */
@@ -59,7 +59,7 @@ func TestParseKeyValueList(t *testing.T) {
 }
 
 func TestParseErrorKeyValueList(t *testing.T) {
-	for i, d := range KeyValueListErrorTestData {
+	for i, d := range KeyValueListTestErrorData {
 		Convey("using data set "+strconv.Itoa(i+1), t, func() {
 			Convey("when given a new parser", func() {
 				p := NewParser(strings.NewReader(d.in))

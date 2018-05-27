@@ -3,41 +3,47 @@ package elang
 import (
 	"fmt"
 	"io"
-	"log"
-	"os"
 )
 
 // Parser represents a parser.
 type Parser struct {
 	s   *Scanner
-	l   *log.Logger
 	buf struct {
 		tok         Token  // last read token
 		lit         string // last read literal
 		isUnscanned bool   // true if you should read buf first
 	}
+
+	contextDeclHandle func(c *ContextDecl) error
+	contextHandle     func(c *Context) error
 }
 
 // NewParser returns a new instance of Parser.
 func NewParser(r io.Reader) *Parser {
-	return &Parser{s: NewScanner(r), l: log.New(os.Stdout, "Entitas-Lang: ", 444)}
+	return &Parser{s: NewScanner(r)}
+}
+
+// HandleContextDecl ...
+func (p *Parser) HandleContextDecl(handle func(c *ContextDecl) error) {
+	p.contextDeclHandle = handle
+}
+
+func (p *Parser) handleContextDecl(contextDecl *ContextDecl) (*ContextDecl, error) {
+	if p.contextDeclHandle != nil {
+		return contextDecl, p.contextDeclHandle(contextDecl)
+	}
+	return contextDecl, nil
 }
 
 // scan returns the next token from the underlying scanner.
 // If a token has been unscanned then read that instead.
 func (p *Parser) scan() (tok Token, lit string) {
-	// If we have a token on the buffer, then return it.
 	if p.buf.isUnscanned {
 		p.buf.isUnscanned = false
 		return p.buf.tok, p.buf.lit
 	}
-
-	// Otherwise read the next token from the scanner.
 	tok, lit = p.s.Scan()
-
-	// Save it to the buffer in case we unscan later.
 	p.buf.tok, p.buf.lit = tok, lit
-
 	return
 }
 
@@ -180,9 +186,8 @@ func (p *Parser) parseContext() (*Context, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.ContextParameter = kv
-	if c.ContextParameter == nil {
-		c.ContextParameter = make(map[string]string, 0)
+	if kv != nil {
+		c.ContextParameter = kv
 	}
 	return c, nil
 }
@@ -207,32 +212,37 @@ func (p *Parser) parseContextDecl() (*ContextDecl, error) {
 			return nil, fmt.Errorf("Parse context failed. Found '%s', expected ','", lit)
 		}
 	}
-	return cd, nil
+	return p.handleContextDecl(cd)
 }
 
-func (p *Parser) parseNamespaceDecl() (*NamespaceDecl, error) {
-	tok, lit := p.scanIgnoreWhitespace()
-	if tok != KW_NAMESPACE {
-		return nil, fmt.Errorf("Parse namespace failed. Found '%s', expected 'namespace'", lit)
-	}
-	ns := NewNamespaceDecl()
+func (p *Parser) parseNamespace() (string, error) {
 	nsv := ""
 	for {
 		id, err := p.parseIdentifier()
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 		nsv += id
-		tok, lit := p.scan()
+		tok, _ := p.scan()
 		if tok != PERIOD {
-			if tok != NEWLINE {
-				return nil, fmt.Errorf("Parse namespace failed. Found '%s', exspected '.' or newline", lit)
-			}
-			ns.Namespace = nsv
-			return ns, nil
+			return nsv, nil
 		}
 		nsv += "."
 	}
+}
+
+func (p *Parser) parseNamespaceDecl() (*NamespaceDecl, error) {
+	ns := NewNamespaceDecl()
+	tok, lit := p.scanIgnoreWhitespace()
+	if tok != KW_NAMESPACE {
+		return nil, fmt.Errorf("Parse namespace failed. Found '%s', expected 'namespace'", lit)
+	}
+	str, err := p.parseNamespace()
+	if err != nil {
+		return nil, err
+	}
+	ns.Namespace = str
+	return ns, nil
 }
 
 func (p *Parser) parseIdentifier() (string, error) {
