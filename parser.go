@@ -17,7 +17,7 @@ type Parser struct {
 	project *Project
 
 	contextDeclHandle func(p *Project, c *ContextDecl) error
-	contextHandle     func(p *Project, c *Context) error
+	contextHandle     func(p *Project, cd *ContextDecl, c *Context) error
 }
 
 // NewParser returns a new instance of Parser.
@@ -31,7 +31,7 @@ func (p *Parser) HandleContextDecl(handle func(p *Project, c *ContextDecl) error
 }
 
 // HandleContext ...
-func (p *Parser) HandleContext(handle func(p *Project, c *Context) error) {
+func (p *Parser) HandleContext(handle func(p *Project, cd *ContextDecl, c *Context) error) {
 	p.contextHandle = handle
 }
 
@@ -42,9 +42,9 @@ func (p *Parser) handleContextDecl(contextDecl *ContextDecl) (*ContextDecl, erro
 	return contextDecl, nil
 }
 
-func (p *Parser) handleContext(context *Context) (*Context, error) {
+func (p *Parser) handleContext(contextDecl *ContextDecl, context *Context) (*Context, error) {
 	if p.contextHandle != nil {
-		return context, p.contextHandle(p.project, context)
+		return context, p.contextHandle(p.project, contextDecl, context)
 	}
 	return context, nil
 }
@@ -251,12 +251,11 @@ func (p *Parser) parseContext() (*Context, error) {
 	if kv != nil {
 		c.Parameter = kv
 	}
-	return p.handleContext(c)
+	return p.handleContext(p.project.ContextDecl, c)
 }
 
 // parseContextDecl `context my_game` `context my_game (key:value), second_context(key:value)` ...
 func (p *Parser) parseContextDecl() (*ContextDecl, error) {
-	cd := NewContextDecl()
 	tok, lit := p.scanIgnoreWhitespace()
 	if tok != KW_CONTEXT {
 		return nil, fmt.Errorf("Parse context failed. Found '%s', expected 'context'", lit)
@@ -266,7 +265,7 @@ func (p *Parser) parseContextDecl() (*ContextDecl, error) {
 		if err != nil {
 			return nil, err
 		}
-		cd.AddContext(c)
+		p.project.ContextDecl.AddContext(c)
 		tok, lit = p.scan()
 		if tok == NEWLINE || tok == EOF {
 			break
@@ -274,7 +273,7 @@ func (p *Parser) parseContextDecl() (*ContextDecl, error) {
 			return nil, fmt.Errorf("Parse context failed. Found '%s', expected ','", lit)
 		}
 	}
-	return p.handleContextDecl(cd)
+	return p.handleContextDecl(p.project.ContextDecl)
 }
 
 // parseAlias `my_int : "int"` ...

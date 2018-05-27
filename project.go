@@ -11,7 +11,12 @@ type Project struct {
 
 // NewProject ...
 func NewProject() *Project {
-	return &Project{AliasDecl: make([]*AliasDecl, 0), ComponentDecl: make([]*ComponentDecl, 0)}
+	return &Project{
+		TargetDecl:    NewTargetDecl(),
+		NamespaceDecl: NewNamespaceDecl(),
+		ContextDecl:   NewContextDecl(),
+		AliasDecl:     make([]*AliasDecl, 0),
+		ComponentDecl: make([]*ComponentDecl, 0)}
 }
 
 // AddAliasDecl ...
