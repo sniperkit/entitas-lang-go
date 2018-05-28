@@ -2,11 +2,10 @@ package elang
 
 // TargetDecl ...
 type TargetDecl struct {
-	Target        string
-	TargetVersion string
+	Target string
 }
 
 // NewTargetDecl ...
 func NewTargetDecl() *TargetDecl {
-	return &TargetDecl{"", "0.0.0"}
+	return &TargetDecl{}
 }

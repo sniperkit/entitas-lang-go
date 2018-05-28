@@ -1,0 +1,11 @@
+target entitas_csharp
+
+namespace my.game.test
+
+context Game(default, key:value), GameState, Input
+
+alias intList : "System.Collections.Generic.List<int>"
+alias stringList : "System.Collections.Generic.List<string>"
+
+comp interactive(unique) in a, b
+comp test

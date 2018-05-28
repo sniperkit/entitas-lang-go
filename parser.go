@@ -367,12 +367,17 @@ func (p *Parser) Parse() (*Project, error) {
 	p.project.ContextDecl = cd
 
 	for {
+		tok, _ := p.scan()
+		p.unscan()
+		if tok != KW_ALIAS {
+			break
+		}
 		ad, err := p.parseAliasDecl()
 		if err != nil {
 			return nil, err
 		}
 		p.project.AddAliasDecl(ad)
-		tok, _ := p.scan()
+		tok, _ = p.scan()
 		p.unscan()
 		if tok != KW_ALIAS {
 			break
@@ -380,12 +385,17 @@ func (p *Parser) Parse() (*Project, error) {
 	}
 
 	for {
+		tok, _ := p.scan()
+		p.unscan()
+		if tok != KW_COMP {
+			break
+		}
 		comp, err := p.parseComponentDecl()
 		if err != nil {
 			return nil, err
 		}
 		p.project.AddComponentDecl(comp)
-		tok, _ := p.scan()
+		tok, _ = p.scan()
 		p.unscan()
 		if tok != KW_COMP {
 			break

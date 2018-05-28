@@ -9,7 +9,7 @@ type ComponentDecl struct {
 
 // NewComponentDecl ...
 func NewComponentDecl() *ComponentDecl {
-	return &ComponentDecl{"", make(map[string]string, 0), make([]string, 0)}
+	return &ComponentDecl{Parameter: make(map[string]string, 0), Context: make([]string, 0)}
 }
 
 // AddContext ...

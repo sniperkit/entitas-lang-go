@@ -7,5 +7,5 @@ type NamespaceDecl struct {
 
 // NewNamespaceDecl ...
 func NewNamespaceDecl() *NamespaceDecl {
-	return &NamespaceDecl{""}
+	return &NamespaceDecl{}
 }
