@@ -25,7 +25,7 @@ comp GameBoardElement
 comp Movable
 
 comp Position 
-    x (entityindex:multiple) : int
+    x : int
     y : int
 
 comp Score(unique) in GameState

@@ -13,40 +13,11 @@ type Parser struct {
 		lit         string // last read literal
 		isUnscanned bool   // true if you should read buf first
 	}
-
-	project *Project
-
-	contextDeclHandle func(p *Project, c *ContextDecl) error
-	contextHandle     func(p *Project, cd *ContextDecl, c *Context) error
 }
 
 // NewParser returns a new instance of Parser.
 func NewParser(r io.Reader) *Parser {
-	return &Parser{project: NewProject(), s: NewScanner(r)}
-}
-
-// HandleContextDecl ...
-func (p *Parser) HandleContextDecl(handle func(p *Project, c *ContextDecl) error) {
-	p.contextDeclHandle = handle
-}
-
-// HandleContext ...
-func (p *Parser) HandleContext(handle func(p *Project, cd *ContextDecl, c *Context) error) {
-	p.contextHandle = handle
-}
-
-func (p *Parser) handleContextDecl(contextDecl *ContextDecl) (*ContextDecl, error) {
-	if p.contextDeclHandle != nil {
-		return contextDecl, p.contextDeclHandle(p.project, contextDecl)
-	}
-	return contextDecl, nil
-}
-
-func (p *Parser) handleContext(contextDecl *ContextDecl, context *Context) (*Context, error) {
-	if p.contextHandle != nil {
-		return context, p.contextHandle(p.project, contextDecl, context)
-	}
-	return context, nil
+	return &Parser{s: NewScanner(r)}
 }
 
 // scan returns the next token from the underlying scanner.
@@ -123,7 +94,7 @@ func (p *Parser) parseParameter() (kv KeyValue, err error) {
 	tok, lit = p.scan()
 	if tok != RPAREN {
 		p.unscan()
-		return nil, fmt.Errorf("Parse parameter failed. Found '%s', expected ')'", lit)
+		return nil, fmt.Errorf("EntitasLang: Parse parameter failed. Found '%s', expected ')'", lit)
 	}
 	return kv, nil
 }
@@ -132,13 +103,13 @@ func (p *Parser) parseParameter() (kv KeyValue, err error) {
 func (p *Parser) parseString() (str string, err error) {
 	tok, lit := p.scanIgnoreWhitespace()
 	if tok != QUOTE {
-		return "", fmt.Errorf("Parse string failed. Found '%s', expected '\"'", lit)
+		return "", fmt.Errorf("EntitasLang: Parse string failed. Found '%s', expected '\"'", lit)
 	}
 	s := ""
 	for {
 		tok, lit := p.scan()
 		if tok == NEWLINE {
-			return "", fmt.Errorf("Parse string failed. Found newline, expected '\"', word or character")
+			return "", fmt.Errorf("EntitasLang: Parse string failed. Found newline, expected '\"', word or character")
 		} else if tok == QUOTE {
 			break
 		}
@@ -154,7 +125,7 @@ func (p *Parser) parseIdentifier() (string, error) {
 	if isKeyword(tok) || tok == WORD || tok == UNDERSCORE {
 		s += lit
 	} else {
-		return "", fmt.Errorf("Parse identifier failed. Found '%s', expected keyword, word or underscore", lit)
+		return "", fmt.Errorf("EntitasLang: Parse identifier failed. Found '%s', expected keyword, word or underscore", lit)
 	}
 	for {
 		tok, lit := p.scan()
@@ -164,7 +135,7 @@ func (p *Parser) parseIdentifier() (string, error) {
 		}
 		p.unscan()
 		if containsOnly(s, '_') {
-			return "", fmt.Errorf("Parse identifier failed. Identifier cannot consist only of \"_\"")
+			return "", fmt.Errorf("EntitasLang: Parse identifier failed. Identifier cannot consist only of \"_\"")
 		}
 		return s, nil
 	}
@@ -193,7 +164,7 @@ func (p *Parser) parseTargetDecl() (*TargetDecl, error) {
 	t := NewTargetDecl()
 	tok, lit := p.scanIgnoreWhitespace()
 	if tok != KW_TARGET {
-		return nil, fmt.Errorf("Parse target failed. Found '%s', expected 'target'", lit)
+		return nil, fmt.Errorf("EntitasLang: Parse target failed. Found '%s', expected 'target'", lit)
 	}
 	id, err := p.parseIdentifier()
 	if err != nil {
@@ -226,7 +197,7 @@ func (p *Parser) parseNamespaceDecl() (*NamespaceDecl, error) {
 	ns := NewNamespaceDecl()
 	tok, lit := p.scanIgnoreWhitespace()
 	if tok != KW_NAMESPACE {
-		return nil, fmt.Errorf("Parse namespace failed. Found '%s', expected 'namespace'", lit)
+		return nil, fmt.Errorf("EntitasLang: Parse namespace failed. Found '%s', expected 'namespace'", lit)
 	}
 	str, err := p.parseNamespace()
 	if err != nil {
@@ -251,29 +222,30 @@ func (p *Parser) parseContext() (*Context, error) {
 	if kv != nil {
 		c.Parameter = kv
 	}
-	return p.handleContext(p.project.ContextDecl, c)
+	return c, nil
 }
 
 // parseContextDecl `context my_game` `context my_game (key:value), second_context(key:value)` ...
 func (p *Parser) parseContextDecl() (*ContextDecl, error) {
+	cd := NewContextDecl()
 	tok, lit := p.scanIgnoreWhitespace()
 	if tok != KW_CONTEXT {
-		return nil, fmt.Errorf("Parse context failed. Found '%s', expected 'context'", lit)
+		return nil, fmt.Errorf("EntitasLang: Parse context failed. Found '%s', expected 'context'", lit)
 	}
 	for {
 		c, err := p.parseContext()
 		if err != nil {
 			return nil, err
 		}
-		p.project.ContextDecl.AddContext(c)
+		cd.AddContext(c)
 		tok, lit = p.scan()
 		if tok == NEWLINE || tok == EOF {
 			break
 		} else if tok != COMMA {
-			return nil, fmt.Errorf("Parse context failed. Found '%s', expected ','", lit)
+			return nil, fmt.Errorf("EntitasLang: Parse context failed. Found '%s', expected ','", lit)
 		}
 	}
-	return p.handleContextDecl(p.project.ContextDecl)
+	return cd, nil
 }
 
 // parseAlias `my_int : "int"` ...
@@ -286,7 +258,7 @@ func (p *Parser) parseAlias() (*Alias, error) {
 	a.Name = id
 	tok, lit := p.scanIgnoreWhitespace()
 	if tok != COLON {
-		return nil, fmt.Errorf("Parse alias failed. Found '%s', expected ':'", lit)
+		return nil, fmt.Errorf("EntitasLang: Parse alias failed. Found '%s', expected ':'", lit)
 	}
 	str, err := p.parseString()
 	a.Value = str
@@ -301,7 +273,7 @@ func (p *Parser) parseAliasDecl() (*AliasDecl, error) {
 	ad := NewAliasDecl()
 	tok, lit := p.scanIgnoreWhitespace()
 	if tok != KW_ALIAS {
-		return nil, fmt.Errorf("Parse alias failed. Found '%s', expected 'alias'", lit)
+		return nil, fmt.Errorf("EntitasLang: Parse alias failed. Found '%s', expected 'alias'", lit)
 	}
 	for {
 		a, err := p.parseAlias()
@@ -318,53 +290,61 @@ func (p *Parser) parseAliasDecl() (*AliasDecl, error) {
 }
 
 // parseComponentDecl `comp my_component (key:value) in game` ...
-func (p *Parser) parseComponentDecl() (*ComponentDecl, error) {
+func (p *Parser) parseComponentDecl() (*ComponentDecl, []string, error) {
 	comp := NewComponentDecl()
+	list := []string{}
 	tok, lit := p.scanIgnoreWhitespace()
 	if tok != KW_COMP {
-		return nil, fmt.Errorf("Parse component failed. Found '%s', expected 'comp'", lit)
+		return nil, nil, fmt.Errorf("EntitasLang: Parse component failed. Found '%s', expected 'comp'", lit)
 	}
 	id, err := p.parseIdentifier()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	comp.Name = id
 	kv, err := p.parseParameter()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if kv != nil {
 		comp.Parameter = kv
 	}
 	tok, _ = p.scanIgnoreWhitespace()
 	if tok == KW_IN {
-		l, err := p.parseIdentifierList()
+		list, err = p.parseIdentifierList()
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		comp.Context = l
+		tok, _ = p.scan()
+		if tok != NEWLINE {
+			p.unscan()
+		}
 	}
-	p.scanIgnoreWhitespace()
-	return comp, nil
+	tok, _ = p.scan()
+	if tok != NEWLINE {
+		p.unscan()
+	}
+	return comp, list, nil
 }
 
 // Parse one entire entitas-lang file.
 func (p *Parser) Parse() (*Project, error) {
+	project := NewProject()
 	t, err := p.parseTargetDecl()
 	if err != nil {
 		return nil, err
 	}
-	p.project.TargetDecl = t
+	project.TargetDecl = t
 	ns, err := p.parseNamespaceDecl()
 	if err != nil {
 		return nil, err
 	}
-	p.project.NamespaceDecl = ns
+	project.NamespaceDecl = ns
 	cd, err := p.parseContextDecl()
 	if err != nil {
 		return nil, err
 	}
-	p.project.ContextDecl = cd
+	project.ContextDecl = cd
 
 	for {
 		tok, _ := p.scan()
@@ -376,12 +356,7 @@ func (p *Parser) Parse() (*Project, error) {
 		if err != nil {
 			return nil, err
 		}
-		p.project.AddAliasDecl(ad)
-		tok, _ = p.scan()
-		p.unscan()
-		if tok != KW_ALIAS {
-			break
-		}
+		project.AddAliasDecl(ad)
 	}
 
 	for {
@@ -390,19 +365,26 @@ func (p *Parser) Parse() (*Project, error) {
 		if tok != KW_COMP {
 			break
 		}
-		comp, err := p.parseComponentDecl()
+		Component, ContextList, err := p.parseComponentDecl()
 		if err != nil {
 			return nil, err
 		}
-		p.project.AddComponentDecl(comp)
-		tok, _ = p.scan()
-		p.unscan()
-		if tok != KW_COMP {
-			break
+		for _, Context := range ContextList {
+			if project.ContextDecl.GetContextWithName(Context) == nil {
+				return nil, fmt.Errorf("EntitasLang: Component(%s) Context '%s' is not defined!", Component.Name, Context)
+			}
+		}
+		Component.Context = project.ContextDecl.GetContextSliceWithName(ContextList...)
+		project.AddComponentDecl(Component)
+	}
+
+	for _, Context := range project.ContextDecl.Context {
+		if len(project.ContextDecl.GetContextSliceWithName(Context.Name)) > 1 {
+			return nil, fmt.Errorf("EntitasLang: Context '%s' is already defined!", Context.Name)
 		}
 	}
 
-	return p.project, nil
+	return project, nil
 }
 
 // Parse one entire entitas-lang file.

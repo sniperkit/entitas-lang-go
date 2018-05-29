@@ -13,46 +13,60 @@ func NewContextDecl() *ContextDecl {
 }
 
 // AddContext ...
-func (c *ContextDecl) AddContext(Context *Context) {
-	c.Context = append(c.Context, Context)
+func (ContextDecl *ContextDecl) AddContext(Context *Context) {
+	ContextDecl.Context = append(ContextDecl.Context, Context)
 }
 
 // GetContextWithName ...
-func (c *ContextDecl) GetContextWithName(Name string) *Context {
-	for _, context := range c.Context {
-		if context.Name == Name {
-			return context
+func (ContextDecl *ContextDecl) GetContextWithName(Name string) *Context {
+	for _, Context := range ContextDecl.Context {
+		if Context.Name == Name {
+			return Context
 		}
 	}
 	return nil
 }
 
+// GetContextSliceWithName ...
+func (ContextDecl *ContextDecl) GetContextSliceWithName(Name ...string) []*Context {
+	ContextSlice := make([]*Context, 0)
+	for _, Context := range ContextDecl.Context {
+		for _, Name := range Name {
+			if Context.Name == Name {
+				ContextSlice = append(ContextSlice, Context)
+			}
+		}
+
+	}
+	return ContextSlice
+}
+
 // GetContextWithParameter ...
-func (c *ContextDecl) GetContextWithParameter(Parameter string) *Context {
-	for _, context := range c.Context {
-		if _, ok := context.GetParameter(Parameter); ok {
-			return context
+func (ContextDecl *ContextDecl) GetContextWithParameter(Parameter string) *Context {
+	for _, Context := range ContextDecl.Context {
+		if _, Ok := Context.GetParameter(Parameter); Ok {
+			return Context
 		}
 	}
 	return nil
 }
 
 // GetContextWithParameterValue ...
-func (c *ContextDecl) GetContextWithParameterValue(Parameter string, Value string) *Context {
-	for _, context := range c.Context {
-		if value, _ := context.GetParameter(Parameter); value == Value {
-			return context
+func (ContextDecl *ContextDecl) GetContextWithParameterValue(Parameter string, Value string) *Context {
+	for _, Context := range ContextDecl.Context {
+		if Value, _ := Context.GetParameter(Parameter); Value == Value {
+			return Context
 		}
 	}
 	return nil
 }
 
 // String ...
-func (c ContextDecl) String() string {
+func (ContextDecl ContextDecl) String() string {
 	var buffer bytes.Buffer
-	for i, context := range c.Context {
+	for i, context := range ContextDecl.Context {
 		buffer.WriteString(context.String())
-		if i != len(c.Context)-1 {
+		if i != len(ContextDecl.Context)-1 {
 			buffer.WriteString(", ")
 		}
 	}

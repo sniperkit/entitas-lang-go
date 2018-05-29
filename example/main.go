@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	. "github.com/SirMetathyst/entitas-lang-go"
+	EntitasLang "github.com/SirMetathyst/entitas-lang-go"
 )
 
 /*
@@ -24,10 +24,6 @@ func RunScanner() {
 }*/
 
 func main() {
-	if len(os.Args) <= 1 {
-		return
-	}
-
 	//RunScanner()
 
 	file, err := os.Open(os.Args[1])
@@ -35,25 +31,7 @@ func main() {
 		panic(err)
 	}
 
-	parser := NewParser(file)
-
-	/* Will be built-in eventually with default parser but can be overridden */
-	parser.HandleContextDecl(func(p *Project, c *ContextDecl) error {
-		if c.GetContextWithParameter("default") == nil {
-			return fmt.Errorf("default context not defined!")
-		}
-		return nil
-	})
-
-	/* Will be built-in eventually with default parser but can be overridden */
-	parser.HandleContext(func(p *Project, cd *ContextDecl, c *Context) error {
-		if cd.GetContextWithName(c.Name) != nil {
-			return fmt.Errorf("context with name '%s' is already defined!", c.Name)
-		}
-		return nil
-	})
-
-	project, err := parser.Parse()
+	project, err := EntitasLang.Parse(file)
 	if err != nil {
 		panic(err)
 	}

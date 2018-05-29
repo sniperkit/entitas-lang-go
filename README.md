@@ -154,25 +154,7 @@ func main() {
 		panic(err)
 	}
 
-    parser := elang.NewParser(file)
-    
-	/* Will be built-in eventually with default parser but can be overridden */
-	parser.HandleContextDecl(func(p *Project, c *ContextDecl) error {
-		if c.GetContextWithParameter("default") == nil {
-			return fmt.Errorf("default context not defined!")
-		}
-		return nil
-	})
-
-	/* Will be built-in eventually with default parser but can be overridden */
-	parser.HandleContext(func(p *Project, cd *ContextDecl, c *Context) error {
-		if cd.GetContextWithName(c.Name) != nil {
-			return fmt.Errorf("context with name '%s' is already defined!", c.Name)
-		}
-		return nil
-	})
-
-	project, err := parser.Parse()
+	project, err := EntitasLang.Parse(file)
 	if err != nil {
 		panic(err)
 	}
@@ -199,5 +181,4 @@ func main() {
 		}
 		fmt.Println()
 	}
-}
 ```
